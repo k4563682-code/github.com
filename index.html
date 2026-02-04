@@ -13,7 +13,6 @@
         :root { --primary: #0052cc; --accent: #ffcc00; --bg: #f0f2f5; --white: #ffffff; --text: #1c1e21; --red: #d93025; --gray: #65676b; }
         body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
         
-        /* නවීන Header එක සහ Search Bar එක */
         header { 
             background: var(--primary); 
             padding: 10px 15px; 
@@ -82,14 +81,6 @@
     <div id="home-content"></div>
 </div>
 
-<div id="cat-view" class="page">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-        <button onclick="showPage('home')" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">⬅</button>
-        <h2 id="cat-title" style="margin:0;">සියල්ල</h2>
-    </div>
-    <div id="cat-items-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;"></div>
-</div>
-
 <div id="search-results-page" class="page">
     <h2>සෙවුම් ප්‍රතිඵල</h2>
     <div id="search-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;"></div>
@@ -110,7 +101,7 @@
 </div>
 
 <div id="account" class="page">
-    <div id="login-section" class="card-box" style="display:none;">
+    <div id="login-section" class="card-box">
         <h2 style="text-align:center;">ලොග් වන්න</h2>
         <input type="text" id="user-name" placeholder="නම">
         <input type="tel" id="user-phone" placeholder="දුරකථනය">
@@ -178,7 +169,17 @@
 
     function handleImage(e) {
         const reader = new FileReader();
-        reader.onload = (ev) => { selectedImg = ev.target.result; document.getElementById('photo-preview').innerHTML = `<img src="${selectedImg}" style="width:100%; height:100%; object-fit:cover;">`; };
+        reader.onload = (ev) => { 
+            const img = new Image();
+            img.onload = () => {
+                const canvas = document.createElement('canvas');
+                canvas.width = 400; canvas.height = 300;
+                canvas.getContext('2d').drawImage(img, 0, 0, 400, 300);
+                selectedImg = canvas.toDataURL('image/jpeg', 0.6);
+                document.getElementById('photo-preview').innerHTML = `<img src="${selectedImg}" style="width:100%; height:100%; object-fit:cover;">`;
+            };
+            img.src = ev.target.result;
+        };
         reader.readAsDataURL(e.target.files[0]);
     }
 
@@ -201,7 +202,7 @@
         const data = snap.val();
         for(let key in data) { allProducts.push({...data[key], key}); }
         renderHome();
-        if(currentUser) updateAccountUI();
+        updateAccountUI();
     });
 
     function renderHome() {
@@ -210,18 +211,11 @@
         cats.forEach(c => {
             const items = allProducts.filter(p => p.cat === c);
             if(items.length) {
-                html += `<div class="section-header"><h2>${c}</h2><span class="view-all" onclick="renderCategory('${c}')">සියල්ල ></span></div><div class="horizontal-scroll">` +
+                html += `<div class="section-header"><h2>${c}</h2></div><div class="horizontal-scroll">` +
                 items.reverse().slice(0,6).map(i => `<div class="product-card" onclick="viewDetail('${i.key}')"><img src="${i.img}"><div class="p-info"><div class="p-name">${i.title}</div><div class="p-price">Rs.${i.price}</div><div style="font-size:10px; color:gray;">📍 ${i.city}</div></div></div>`).join('') + `</div>`;
             }
         });
-        document.getElementById('home-content').innerHTML = html || "<p style='text-align:center; padding:50px;'>පූරණය වෙමින්...</p>";
-    }
-
-    function renderCategory(cat) {
-        showPage('cat-view');
-        document.getElementById('cat-title').innerText = cat;
-        const items = allProducts.filter(p => p.cat === cat);
-        document.getElementById('cat-items-grid').innerHTML = items.map(i => `<div class="product-card" onclick="viewDetail('${i.key}')" style="min-width:auto;"><img src="${i.img}"><div class="p-info"><b>${i.title}</b><br><span class="p-price">Rs.${i.price}</span><br><small>📍 ${i.city}</small></div></div>`).join('');
+        document.getElementById('home-content').innerHTML = html || "<p style='text-align:center; padding:50px;'>දැන්වීම් පූරණය වෙමින්...</p>";
     }
 
     function viewDetail(key) {
@@ -247,13 +241,18 @@
         if(name && phone) { localStorage.setItem('sm_user', JSON.stringify({name, phone})); location.reload(); }
     }
     function logout() { localStorage.removeItem('sm_user'); location.reload(); }
+
     function updateAccountUI() {
         if(currentUser) {
-            document.getElementById('login-section').style.display='none'; document.getElementById('profile-section').style.display='block';
+            document.getElementById('login-section').style.display = 'none';
+            document.getElementById('profile-section').style.display = 'block';
             document.getElementById('p-name').innerText = currentUser.name;
             const myAds = allProducts.filter(p => p.uId === currentUser.phone);
-            document.getElementById('my-ads-list').innerHTML = myAds.map(i => `<div style="display:flex; align-items:center; justify-content:space-between; background:white; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid #eee;"><span>${i.title}</span><button onclick="deleteAd('${i.key}')" style="color:red; border:none; background:none;">Delete</button></div>`).join('');
-        } else { document.getElementById('login-section').style.display='block'; }
+            document.getElementById('my-ads-list').innerHTML = myAds.map(i => `<div style="display:flex; align-items:center; justify-content:space-between; background:white; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid #eee;"><span>${i.title}</span><button onclick="deleteAd('${i.key}')" style="color:red; border:none; background:none; cursor:pointer;">❌ Delete</button></div>`).join('');
+        } else {
+            document.getElementById('login-section').style.display = 'block';
+            document.getElementById('profile-section').style.display = 'none';
+        }
     }
     function deleteAd(key) { if(confirm("Delete?")) database.ref('products/'+key).remove(); }
 </script>
