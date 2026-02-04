@@ -4,113 +4,112 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Siri Market | සිරි මාර්කට්</title>
-    
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.15.0/firebase-database-compat.js"></script>
-    
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700;800&display=swap" rel="stylesheet">
     <style>
         :root { --primary: #0052cc; --accent: #ffcc00; --bg: #f0f2f5; --white: #ffffff; --text: #1c1e21; --red: #d93025; --gray: #65676b; }
-        body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--bg); color: var(--text); padding-bottom: 80px; }
+        body { font-family: 'Inter', sans-serif; margin: 0; background-color: var(--bg); padding-bottom: 80px; }
         
-        header { background: var(--primary); padding: 15px; position: sticky; top: 0; z-index: 2000; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
-        .logo { color: var(--accent); font-size: 24px; font-weight: 800; text-align: center; text-transform: uppercase; letter-spacing: 1px; }
+        /* Modern Header with Search Bar */
+        header { 
+            background: var(--primary); 
+            padding: 10px 15px; 
+            position: sticky; 
+            top: 0; 
+            z-index: 2000; 
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+        }
+        .header-top { display: flex; justify-content: center; align-items: center; }
+        .logo { color: var(--accent); font-size: 22px; font-weight: 800; text-transform: uppercase; letter-spacing: 1px; }
         
-        /* Search Bar Style */
-        .search-container { padding: 10px 15px; background: var(--white); border-bottom: 1px solid #ddd; }
-        .search-input { width: 100%; padding: 12px; border: 1px solid #ddd; border-radius: 25px; font-size: 14px; outline: none; background: #f0f2f5; }
+        .search-wrapper { position: relative; width: 100%; }
+        .search-input { 
+            width: 100%; 
+            padding: 10px 15px 10px 40px; 
+            border: none; 
+            border-radius: 8px; 
+            background: rgba(255,255,255,0.2); 
+            color: white; 
+            font-size: 14px;
+            outline: none;
+            box-sizing: border-box;
+        }
+        .search-input::placeholder { color: rgba(255,255,255,0.7); }
+        .search-icon { position: absolute; left: 12px; top: 50%; transform: translateY(-50%); color: rgba(255,255,255,0.7); }
 
-        .page { display: none; max-width: 600px; margin: 0 auto; padding: 15px; animation: fadeIn 0.3s ease; }
+        .page { display: none; max-width: 600px; margin: 0 auto; padding: 15px; }
         .active-page { display: block; }
-        @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
-
-        .card-box { background: var(--white); padding: 20px; border-radius: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; border: 1px solid #e4e6eb; }
-        input, select, textarea { width: 100%; padding: 14px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; font-size: 14px; }
-        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: 700; cursor: pointer; font-size: 16px; }
-
-        .section-header { display: flex; justify-content: space-between; align-items: center; margin: 20px 5px 10px; }
-        .section-header h2 { font-size: 18px; margin: 0; }
-        .view-all { color: var(--primary); font-size: 13px; font-weight: 600; cursor: pointer; }
-
-        .horizontal-scroll { display: flex; overflow-x: auto; gap: 12px; padding-bottom: 10px; scrollbar-width: none; }
-        .product-card { min-width: 160px; background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e4e6eb; cursor: pointer; }
-        .product-card img { width: 100%; height: 120px; object-fit: cover; }
+        .card-box { background: var(--white); padding: 20px; border-radius: 15px; box-shadow: 0 2px 12px rgba(0,0,0,0.08); margin-bottom: 20px; }
+        input, select, textarea { width: 100%; padding: 12px; margin: 8px 0; border: 1px solid #ddd; border-radius: 10px; box-sizing: border-box; }
+        .btn-main { background: var(--primary); color: white; border: none; width: 100%; padding: 15px; border-radius: 10px; font-weight: 700; cursor: pointer; }
+        
+        .product-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+        .product-card { background: white; border-radius: 12px; overflow: hidden; border: 1px solid #e4e6eb; cursor: pointer; box-shadow: 0 2px 5px rgba(0,0,0,0.05); }
+        .product-card img { width: 100%; height: 130px; object-fit: cover; }
         .p-info { padding: 10px; }
-        .p-name { font-size: 14px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-        .p-price { color: var(--red); font-weight: 700; font-size: 15px; }
-
-        .seller-badge { background: #f0f7ff; padding: 15px; border-radius: 12px; margin-top: 15px; border-left: 5px solid var(--primary); line-height: 1.6; }
+        .p-name { font-size: 14px; font-weight: 600; margin-bottom: 5px; height: 34px; overflow: hidden; }
+        .p-price { color: var(--red); font-weight: 700; font-size: 16px; }
         
         nav { position: fixed; bottom: 0; width: 100%; background: var(--white); display: flex; justify-content: space-around; padding: 12px 0; border-top: 1px solid #ddd; z-index: 2000; }
-        nav div { text-align: center; font-size: 11px; color: var(--gray); cursor: pointer; }
-        nav div.active { color: var(--primary); font-weight: 700; }
+        nav div { text-align: center; font-size: 11px; color: var(--gray); cursor: pointer; transition: 0.3s; }
+        nav div.active { color: var(--primary); font-weight: 700; transform: scale(1.1); }
     </style>
 </head>
 <body>
 
-<header><div class="logo">Siri Market</div></header>
-
-<div class="search-container" id="search-box">
-    <input type="text" id="search-input" class="search-input" placeholder="භාණ්ඩ සොයන්න... (නම හෝ නගරය)" onkeyup="searchProducts()">
-</div>
+<header>
+    <div class="header-top"><div class="logo">Siri Market</div></div>
+    <div class="search-wrapper" id="search-box">
+        <span class="search-icon">🔍</span>
+        <input type="text" id="search-input" class="search-input" placeholder="භාණ්ඩ හෝ නගරය සොයන්න..." onkeyup="searchProducts()">
+    </div>
+</header>
 
 <div id="home" class="page active-page">
-    <div id="home-content"></div>
+    <h3 style="margin-top:0;">නවතම දැන්වීම්</h3>
+    <div id="home-content" class="product-grid"></div>
 </div>
 
-<div id="cat-view" class="page">
-    <div style="display:flex; align-items:center; gap:10px; margin-bottom:15px;">
-        <button onclick="showPage('home')" style="border:none; background:#eee; padding:5px 15px; border-radius:8px; cursor:pointer;">⬅</button>
-        <h2 id="cat-title" style="margin:0;">සියල්ල</h2>
-    </div>
-    <div id="cat-items-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;"></div>
-</div>
-
-<div id="search-results-page" class="page">
-    <h2>සෙවුම් ප්‍රතිඵල</h2>
-    <div id="search-grid" style="display:grid; grid-template-columns: 1fr 1fr; gap:12px;"></div>
+<div id="search-results" class="page">
+    <h3>සෙවුම් ප්‍රතිඵල</h3>
+    <div id="search-grid" class="product-grid"></div>
 </div>
 
 <div id="sell" class="page">
     <div class="card-box">
-        <h2 style="text-align:center; margin-top:0;">විකුණන්න</h2>
-        <div id="photo-preview" onclick="document.getElementById('imgInput').click()" style="width:100%; height:150px; background:#f0f2f5; border:2px dashed #ccc; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden; color:var(--gray);">📸 පින්තූරය</div>
+        <h2 style="text-align:center;">විකුණන්න</h2>
+        <div id="photo-preview" onclick="document.getElementById('imgInput').click()" style="width:100%; height:150px; background:#f0f2f5; border:2px dashed #ccc; border-radius:12px; display:flex; align-items:center; justify-content:center; cursor:pointer; overflow:hidden;">📸 පින්තූරයක් එක් කරන්න</div>
         <input type="file" id="imgInput" accept="image/*" style="display:none" onchange="handleImage(event)">
         <input type="text" id="p-title" placeholder="භාණ්ඩයේ නම">
-        <select id="p-cat">
-            <option value="භාණ්ඩ">භාණ්ඩ</option>
-            <option value="ආහාර">ආහාර</option>
-            <option value="සතුන්">සතුන්</option>
-        </select>
+        <select id="p-cat"><option value="භාණ්ඩ">භාණ්ඩ</option><option value="ආහාර">ආහාර</option><option value="සතුන්">සතුන්</option></select>
         <input type="number" id="p-price" placeholder="මිල (Rs.)">
-        <textarea id="p-desc" placeholder="නිෂ්පාදනය ගැන විස්තරයක්..."></textarea>
         <input type="text" id="p-city" placeholder="ඔබේ නගරය">
-        <button id="submit-btn" class="btn-main" onclick="addNewProduct()">දැන් පළ කරන්න</button>
+        <textarea id="p-desc" placeholder="වැඩිදුර විස්තර..."></textarea>
+        <button class="btn-main" onclick="addNewProduct()">දැන්වීම පළ කරන්න</button>
     </div>
 </div>
 
 <div id="account" class="page">
-    <div id="login-section" class="card-box" style="display:none;">
-        <h2 style="text-align:center;">ලොග් වන්න</h2>
+    <div id="login-section" class="card-box">
+        <h2 style="text-align:center;">ඇතුළු වන්න</h2>
         <input type="text" id="user-name" placeholder="නම">
         <input type="tel" id="user-phone" placeholder="දුරකථනය">
-        <button class="btn-main" onclick="login()">ඇතුළු වන්න</button>
+        <button class="btn-main" onclick="login()">Log In</button>
     </div>
     <div id="profile-section" style="display:none;">
-        <div class="card-box" style="text-align:center;">
-            <div id="p-avatar" style="width:60px; height:60px; background:var(--primary); color:white; border-radius:50%; margin:0 auto 10px; display:flex; align-items:center; justify-content:center; font-size:24px; font-weight:bold;">U</div>
-            <h3 id="p-name" style="margin:0;"></h3>
-            <p id="p-phone-disp" style="color:var(--gray); font-size:14px;"></p>
-            <button onclick="logout()" style="color:red; background:none; border:none; margin-top:10px; cursor:pointer; font-weight:bold;">Log out</button>
-        </div>
-        <h3>මගේ දැන්වීම්</h3>
-        <div id="my-ads-list"></div>
+        <h3 id="disp-name"></h3>
+        <p id="disp-phone" style="color:var(--gray);"></p>
+        <button onclick="logout()" style="color:red; border:none; background:none; font-weight:bold; cursor:pointer;">Log Out</button>
+        <hr>
+        <h4>මගේ දැන්වීම්</h4>
+        <div id="my-ads"></div>
     </div>
 </div>
 
-<div id="detail-view" class="page">
-    <div id="detail-content"></div>
-</div>
+<div id="detail-view" class="page"><div id="detail-content"></div></div>
 
 <nav>
     <div onclick="showPage('home')" id="nav-home" class="active">🏠<br>ප්‍රධාන</div>
@@ -128,11 +127,10 @@
         messagingSenderId: "922071846388",
         appId: "1:922071846388:web:bc09da65b049208fd43da1"
     };
-
     firebase.initializeApp(firebaseConfig);
     const database = firebase.database();
     let allProducts = [];
-    let currentUser = JSON.parse(localStorage.getItem('sm_user')) || null;
+    let currentUser = JSON.parse(localStorage.getItem('sm_user'));
     let selectedImg = "";
 
     function showPage(id) {
@@ -140,49 +138,33 @@
         document.getElementById(id).classList.add('active-page');
         document.querySelectorAll('nav div').forEach(d => d.classList.remove('active'));
         if(document.getElementById('nav-'+id)) document.getElementById('nav-'+id).classList.add('active');
-        
-        // Hide/Show Search Box
-        document.getElementById('search-box').style.display = (id === 'home' || id === 'search-results-page') ? 'block' : 'none';
         window.scrollTo(0,0);
     }
 
     function searchProducts() {
-        const query = document.getElementById('search-input').value.toLowerCase();
-        if(query.length > 0) {
-            showPage('search-results-page');
-            const filtered = allProducts.filter(p => 
-                p.title.toLowerCase().includes(query) || 
-                p.city.toLowerCase().includes(query)
-            );
-            document.getElementById('search-grid').innerHTML = filtered.map(i => `
-                <div class="product-card" onclick="viewDetail('${i.key}')" style="min-width:auto;">
-                    <img src="${i.img}">
+        const q = document.getElementById('search-input').value.toLowerCase();
+        if(q) {
+            showPage('search-results');
+            const filtered = allProducts.filter(p => p.title.toLowerCase().includes(q) || p.city.toLowerCase().includes(q));
+            document.getElementById('search-grid').innerHTML = filtered.map(p => `
+                <div class="product-card" onclick="viewDetail('${p.key}')">
+                    <img src="${p.img}">
                     <div class="p-info">
-                        <b>${i.title}</b><br>
-                        <span class="p-price">Rs.${i.price}</span><br>
-                        <small>📍 ${i.city}</small>
+                        <div class="p-name">${p.title}</div>
+                        <div class="p-price">Rs.${p.price}</div>
+                        <small>📍 ${p.city}</small>
                     </div>
                 </div>`).join('') || "<p>ප්‍රතිඵල නැත.</p>";
-        } else {
-            showPage('home');
-        }
+        } else { showPage('home'); }
     }
 
     function handleImage(e) {
-        const file = e.target.files[0];
         const reader = new FileReader();
-        reader.onload = (ev) => {
-            const img = new Image();
-            img.onload = () => {
-                const canvas = document.createElement('canvas');
-                canvas.width = 400; canvas.height = 300;
-                canvas.getContext('2d').drawImage(img, 0, 0, 400, 300);
-                selectedImg = canvas.toDataURL('image/jpeg', 0.6);
-                document.getElementById('photo-preview').innerHTML = `<img src="${selectedImg}" style="width:100%; height:100%; object-fit:cover;">`;
-            };
-            img.src = ev.target.result;
+        reader.onload = (ev) => { 
+            selectedImg = ev.target.result; 
+            document.getElementById('photo-preview').innerHTML = `<img src="${selectedImg}" style="width:100%;height:100%;object-fit:cover;">`; 
         };
-        reader.readAsDataURL(file);
+        reader.readAsDataURL(e.target.files[0]);
     }
 
     function addNewProduct() {
@@ -190,60 +172,51 @@
         const title = document.getElementById('p-title').value;
         const price = document.getElementById('p-price').value;
         const city = document.getElementById('p-city').value;
-        if(!title || !price || !selectedImg || !city) return alert("විස්තර සම්පූර්ණ කරන්න");
-        
-        database.ref('products').push({
-            title, price, img: selectedImg, cat: document.getElementById('p-cat').value,
-            desc: document.getElementById('p-desc').value, city: city,
-            seller: currentUser.name, phone: currentUser.phone, uId: currentUser.phone
-        }).then(() => location.reload());
+        const desc = document.getElementById('p-desc').value;
+        if(title && price && selectedImg && city) {
+            database.ref('products').push({ 
+                title, price, city, desc, img: selectedImg, 
+                seller: currentUser.name, phone: currentUser.phone, uId: currentUser.phone 
+            }).then(() => location.reload());
+        } else { alert("සියලු විස්තර පුරවන්න!"); }
     }
 
     database.ref('products').on('value', (snap) => {
         allProducts = [];
         const data = snap.val();
-        for(let key in data) { allProducts.push({...data[key], key}); }
+        for(let key in data) allProducts.push({...data[key], key});
         renderHome();
         if(currentUser) updateAccountUI();
     });
 
     function renderHome() {
-        const cats = ["භාණ්ඩ", "ආහාර", "සතුන්"];
-        let html = "";
-        cats.forEach(c => {
-            const items = allProducts.filter(p => p.cat === c);
-            if(items.length) {
-                html += `<div class="section-header"><h2>${c}</h2><span class="view-all" onclick="renderCategory('${c}')">සියල්ල බලන්න ></span></div><div class="horizontal-scroll">` +
-                items.reverse().slice(0,6).map(i => `<div class="product-card" onclick="viewDetail('${i.key}')"><img src="${i.img}"><div class="p-info"><div class="p-name">${i.title}</div><div class="p-price">Rs.${i.price}</div><div style="font-size:10px; color:gray;">📍 ${i.city}</div></div></div>`).join('') + `</div>`;
-            }
-        });
-        document.getElementById('home-content').innerHTML = html || "<p style='text-align:center; padding:50px;'>දැන්වීම් පූරණය වෙමින්...</p>";
-    }
-
-    function renderCategory(cat) {
-        showPage('cat-view');
-        document.getElementById('cat-title').innerText = cat;
-        const items = allProducts.filter(p => p.cat === cat);
-        document.getElementById('cat-items-grid').innerHTML = items.map(i => `<div class="product-card" onclick="viewDetail('${i.key}')" style="min-width:auto;"><img src="${i.img}"><div class="p-info"><b>${i.title}</b><br><span class="p-price">Rs.${i.price}</span><br><small>📍 ${i.city}</small></div></div>`).join('');
+        document.getElementById('home-content').innerHTML = allProducts.slice().reverse().map(p => `
+            <div class="product-card" onclick="viewDetail('${p.key}')">
+                <img src="${p.img}">
+                <div class="p-info">
+                    <div class="p-name">${p.title}</div>
+                    <div class="p-price">Rs.${p.price}</div>
+                    <small>📍 ${p.city}</small>
+                </div>
+            </div>`).join('');
     }
 
     function viewDetail(key) {
         const p = allProducts.find(x => x.key === key);
         document.getElementById('detail-content').innerHTML = `
-            <button onclick="showPage('home')" style="border:none; background:#eee; padding:10px 20px; border-radius:10px; cursor:pointer;">⬅ ආපසු</button>
-            <div class="card-box" style="margin-top:15px;">
+            <div class="card-box">
+                <button onclick="showPage('home')" style="margin-bottom:10px; border:none; background:#eee; padding:5px 15px; border-radius:5px;">⬅ ආපසු</button>
                 <img src="${p.img}" style="width:100%; border-radius:10px;">
-                <h2 style="margin:10px 0;">${p.title}</h2>
-                <div class="p-price" style="font-size:24px;">Rs.${p.price}</div>
-                <p style="color:var(--gray); line-height:1.6;">${p.desc}</p>
-                <div class="seller-badge">
+                <h2>${p.title}</h2>
+                <h3 class="p-price" style="font-size:24px;">Rs.${p.price}</h3>
+                <p style="color:var(--gray); line-height:1.6;">${p.desc || 'විස්තරයක් නැත.'}</p>
+                <div style="background:#f8f9fa; padding:15px; border-radius:10px; border-left:4px solid var(--primary);">
                     <b>👤 විකුණුම්කරු:</b> ${p.seller}<br>
-                    <b>📍 නගරය:</b> ${p.city}<br>
-                    <b>📞 දුරකථනය:</b> ${p.phone}
+                    <b>📍 නගරය:</b> ${p.city}
                 </div>
-                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:20px;">
-                    <a href="https://wa.me/94${p.phone.replace(/^0/, '')}" style="background:#25d366; color:white; text-align:center; padding:12px; border-radius:10px; text-decoration:none; font-weight:bold;">WhatsApp</a>
-                    <a href="tel:${p.phone}" style="background:var(--primary); color:white; text-align:center; padding:12px; border-radius:10px; text-decoration:none; font-weight:bold;">Call</a>
+                <div style="display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-top:15px;">
+                    <a href="tel:${p.phone}" class="btn-main" style="text-align:center; text-decoration:none; background:#28a745;">📞 අමතන්න</a>
+                    <a href="https://wa.me/94${p.phone.replace(/^0/, '')}" class="btn-main" style="text-align:center; text-decoration:none; background:#25d366;">💬 WhatsApp</a>
                 </div>
             </div>`;
         showPage('detail-view');
@@ -256,15 +229,18 @@
     }
     function logout() { localStorage.removeItem('sm_user'); location.reload(); }
     function updateAccountUI() {
-        if(currentUser) {
-            document.getElementById('login-section').style.display='none'; document.getElementById('profile-section').style.display='block';
-            document.getElementById('p-name').innerText = currentUser.name;
-            document.getElementById('p-phone-disp').innerText = "📞 " + currentUser.phone;
-            const myAds = allProducts.filter(p => p.uId === currentUser.phone);
-            document.getElementById('my-ads-list').innerHTML = myAds.map(i => `<div style="display:flex; align-items:center; gap:10px; background:white; padding:10px; border-radius:10px; margin-bottom:10px; border:1px solid #eee;"><img src="${i.img}" style="width:50px; height:50px; border-radius:5px; object-fit:cover;"><div style="flex:1;"><b>${i.title}</b></div><button onclick="deleteAd('${i.key}')" style="background:#ffebe9; color:red; border:none; padding:8px; border-radius:5px;">Delete</button></div>`).join('');
-        } else { document.getElementById('login-section').style.display='block'; document.getElementById('profile-section').style.display='none'; }
+        document.getElementById('login-section').style.display='none';
+        document.getElementById('profile-section').style.display='block';
+        document.getElementById('disp-name').innerText = "ආයුබෝවන්, " + currentUser.name;
+        document.getElementById('disp-phone').innerText = "📞 " + currentUser.phone;
+        const myAds = allProducts.filter(p => p.uId === currentUser.phone);
+        document.getElementById('my-ads').innerHTML = myAds.map(p => `
+            <div style="display:flex; justify-content:space-between; align-items:center; background:#fff; padding:10px; border-radius:8px; margin-bottom:8px; border:1px solid #eee;">
+                <span>${p.title}</span>
+                <button onclick="deleteAd('${p.key}')" style="color:red; border:none; background:none; cursor:pointer;">❌ Delete</button>
+            </div>`).join('');
     }
-    function deleteAd(key) { if(confirm("Delete?")) database.ref('products/'+key).remove(); }
+    function deleteAd(key) { if(confirm("මෙම දැන්වීම මකා දමන්නද?")) database.ref('products/'+key).remove(); }
 </script>
 </body>
 </html>
